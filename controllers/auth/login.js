@@ -7,7 +7,7 @@ const { RequestError } = require('../../helpers');
 
 const { SECRET_KEY } = process.env;
 
-const login = (req, res) => {
+const login = async(req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
