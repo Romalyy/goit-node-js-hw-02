@@ -1,9 +1,12 @@
 const bcrypt = require('bcryptjs');
 const gravatar = require('gravatar');
+const shortid = require('shortid');
 
 const { User } = require("../../models/user"); 
 
-const { RequestError } = require('../../helpers');
+const { RequestError, sendMail } = require('../../helpers');
+
+const { BASE_URL } = process.env;
 
 const register = async (req, res) => {
     const { email, password, subscription } = req.body;
@@ -13,10 +16,20 @@ const register = async (req, res) => {
     }
     const hashPassword = await bcrypt.hash(password, 10)
     const avatarURL = gravatar.url(email);
-    const result = await User.create({ email, password: hashPassword, subscription, avatarURL });
+    const verificationToken = shortid.generate();
+    const result = await User.create({ email, password: hashPassword, subscription, avatarURL, verificationToken });
+    const mail = {
+        to: email,
+        subject: "Подтверждение регистрации на сайте",
+        html: `<a href="${BASE_URL}/api/auth/verify/${verificationToken}">Нажмите для подтверждения регистрации<a/>`
+    }
+
+    await sendMail(mail);
+
     res.status(201).json({
         email: result.email,
         subscription: result.subscription,
+        verificationToken: result.verificationToken,
     })
 }
 
